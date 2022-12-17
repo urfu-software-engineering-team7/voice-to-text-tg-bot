@@ -16,6 +16,36 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
+# @bot.message_handler(content_types=['voice'])
+# def voice_processing(message):
+    # file_info = bot.get_file(message.voice.file_id)
+    # downloaded_file = bot.download_file(file_info.file_path)
+    # with open('new_file.ogg', 'wb') as new_file:
+        # new_file.write(downloaded_file)
+
+
+def voice_to_text(update: Update, context: CallbackContext) -> None:
+    message = update.effective_message
+    if message.voice.duration > MY_NERVES_LIMIT:
+        message.reply_text(POLITE_RESPONSE, quote=True)
+        return
+
+    chat_id = update.effective_message.chat.id
+    file_name = '%s_%s%s.ogg' % (chat_id, update.message.from_user.id, update.message.message_id)
+    download_and_prep(file_name, message)
+
+    transcriptions = transcribe(file_name, update.message)
+
+    if len(transcriptions) == 0 or transcriptions[0] == '':
+        message.reply_text('Transcription results are empty. You can try setting language manually by '
+                           'replying to the voice message with the language code like ru-RU or en-US',
+                           quote=True)
+        return
+
+    for transcription in transcriptions:
+        message.reply_text(transcription, quote=True)
+
+
 def unknown_text(update, context) -> None:
     update.message.reply_text("Unknown command type /help to get a list of available commands")
 
