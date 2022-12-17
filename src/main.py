@@ -16,14 +16,6 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
-# @bot.message_handler(content_types=['voice'])
-# def voice_processing(message):
-    # file_info = bot.get_file(message.voice.file_id)
-    # downloaded_file = bot.download_file(file_info.file_path)
-    # with open('new_file.ogg', 'wb') as new_file:
-        # new_file.write(downloaded_file)
-
-
 def voice_to_text(update: Update, context: CallbackContext) -> None:
     message = update.effective_message
     if message.voice.duration > MY_NERVES_LIMIT:
