@@ -7,7 +7,6 @@ import logging
 
 from dotenv import load_dotenv
 from telegram.ext import Updater, MessageHandler, filters
-from telegram.constants import MAX_MESSAGE_LENGTH
 
 load_dotenv()
 
@@ -94,7 +93,7 @@ def download_voice(update, context) -> None:
 
     new_file.download(f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg")
 
-    update.message.reply_text("Voice note saved")
+    update.message.reply_text(f"Voice note saved")
 
 
 def voice_to_text(update, context) -> None:
