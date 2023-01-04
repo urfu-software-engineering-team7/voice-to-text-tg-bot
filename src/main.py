@@ -40,8 +40,8 @@ def cleanup_files():
 def transcribe_to_text(filename):
     try:
         with open(filename, 'rb') as f:
-            # result = whisper_base_model.transcribe(f.name, fp16=False, language='ru')
-            result = whisper_base_model.transcribe(f.name, fp16=False, language='en')
+            result = whisper_base_model.transcribe(f.name, fp16=False, language='ru')
+            # result = whisper_base_model.transcribe(f.name, fp16=False, language='en')
 
     except Exception as e:
         print(e)
@@ -75,18 +75,8 @@ def voice_to_text(update, context) -> None:
     cleanup_files()
 
 
-def unknown_text(update, context) -> None:
-    update.message.reply_text("Unknown command type /help to get a list of available commands")
-
-
-def error(update, context) -> None:
-    logger.warning(f"Update {update} caused error {context.error}")
-
-
 def _add_handlers(dispatcher) -> None:
     dispatcher.add_handler(MessageHandler(filters.Filters.voice, voice_to_text))
-    dispatcher.add_handler(MessageHandler(filters.Filters.text, unknown_text))
-    dispatcher.add_error_handler(error)
 
 
 def main():
