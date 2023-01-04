@@ -3,6 +3,7 @@
 
 import os
 import logging
+import whisper
 # for local files/buffers parallel cleanup
 
 from dotenv import load_dotenv
@@ -88,12 +89,26 @@ logger = logging.getLogger(__name__)
     # return split_long_message(message_text)
 
 
+base_model = whisper.load_model("base")
+
+
+def transcribe_to_text(file):
+    result = base_model.transcribe(file.name, fp16=False, language='ru')
+    return result["text"]
+
+
 def download_voice(update, context) -> None:
     new_file = context.bot.get_file(update.message.voice.file_id)
 
-    new_file.download(f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg")
+    file_name = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg"
+    new_file.download(file_name)
 
-    update.message.reply_text(f"Voice note saved")
+    with open(file_name, 'rb') as f:
+        res = transcribe_to_text(f)
+
+    # message.reply_text(res)
+
+    update.message.reply_text(res)
 
 
 def voice_to_text(update, context) -> None:
@@ -105,19 +120,25 @@ def voice_to_text(update, context) -> None:
     chat_id = update.effective_message.chat.id
     # file_name = '%s_%s%s.ogg' % (chat_id, update.message.from_user.id, update.message.message_id)
     file_name = f"{chat_id}_{update.message.from_user.id}{update.message.message_id}.ogg"
-    download_and_prep(file_name, message)
 
-    transcriptions = transcribe(file_name, update.message)
+    with open(file_name, 'rb') as f:
+        res = transcribe_to_text(f)
+    
+    message.reply_text(res)
 
-    if len(transcriptions) == 0 or transcriptions[0] == '':
-        message.reply_text('Transcription results are empty. You can try setting language manually by '
-                           'replying to the voice message with the language code like ru-RU or en-US',
-                           quote=True)
-        return
+    # download_and_prep(file_name, message)
 
-    for transcription in transcriptions:
-        message.reply_text(transcription, quote=True)
-    message.reply_text("hehe")
+    # transcriptions = transcribe(file_name, update.message)
+
+    # if len(transcriptions) == 0 or transcriptions[0] == '':
+    #     message.reply_text('Transcription results are empty. You can try setting language manually by '
+    #                        'replying to the voice message with the language code like ru-RU or en-US',
+    #                        quote=True)
+    #     return
+
+    # for transcription in transcriptions:
+    #     message.reply_text(transcription, quote=True)
+    # message.reply_text("hehe")
 
 
 def unknown_text(update, context) -> None:
