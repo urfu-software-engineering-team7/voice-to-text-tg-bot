@@ -92,9 +92,8 @@ logger = logging.getLogger(__name__)
 base_model = whisper.load_model("base")
 
 
-def transcribe_to_text(file):
-    result = base_model.transcribe(file.name, fp16=False, language='ru')
-    return result["text"]
+def cleanup_files():
+    return None
 
 
 def download_voice(update, context) -> None:
@@ -103,12 +102,17 @@ def download_voice(update, context) -> None:
     file_name = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg"
     new_file.download(file_name)
 
-    with open(file_name, 'rb') as f:
-        res = transcribe_to_text(f)
 
-    # message.reply_text(res)
+def transcribe_to_text(filename):
+    try:
+        with open(filename, 'rb') as f:
+            result = base_model.transcribe(f.name, fp16=False, language='ru')
 
-    update.message.reply_text(res)
+    except Exception as e:
+        print(e)
+        return None
+
+    return result["text"]
 
 
 def voice_to_text(update, context) -> None:
@@ -118,27 +122,20 @@ def voice_to_text(update, context) -> None:
         # return
 
     chat_id = update.effective_message.chat.id
-    # file_name = '%s_%s%s.ogg' % (chat_id, update.message.from_user.id, update.message.message_id)
-    file_name = f"{chat_id}_{update.message.from_user.id}{update.message.message_id}.ogg"
+    filename = f"{chat_id}_{update.message.from_user.id}{update.message.message_id}.ogg"
 
-    with open(file_name, 'rb') as f:
-        res = transcribe_to_text(f)
+    # downloading file
+    new_file = context.bot.get_file(update.message.voice.file_id)
+    # file_name = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg"
+    new_file.download(filename)
+    # download_voice()
+
+    res = transcribe_to_text(filename)
+    if res is None:
+        message.reply_text("Could not transcribe")
+        return
     
     message.reply_text(res)
-
-    # download_and_prep(file_name, message)
-
-    # transcriptions = transcribe(file_name, update.message)
-
-    # if len(transcriptions) == 0 or transcriptions[0] == '':
-    #     message.reply_text('Transcription results are empty. You can try setting language manually by '
-    #                        'replying to the voice message with the language code like ru-RU or en-US',
-    #                        quote=True)
-    #     return
-
-    # for transcription in transcriptions:
-    #     message.reply_text(transcription, quote=True)
-    # message.reply_text("hehe")
 
 
 def unknown_text(update, context) -> None:
@@ -150,7 +147,7 @@ def error(update, context) -> None:
 
 
 def _add_handlers(dispatcher) -> None:
-    dispatcher.add_handler(MessageHandler(filters.Filters.voice, download_voice))
+    dispatcher.add_handler(MessageHandler(filters.Filters.voice, voice_to_text))
     dispatcher.add_handler(MessageHandler(filters.Filters.text, unknown_text))
     dispatcher.add_error_handler(error)
 
