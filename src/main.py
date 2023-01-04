@@ -4,8 +4,10 @@
 import os
 import logging
 import whisper
+# import threading
 # for local files/buffers parallel cleanup
 
+from threading import Thread
 from dotenv import load_dotenv
 from telegram.ext import Updater, MessageHandler, filters
 
@@ -17,125 +19,60 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 
-# def split_long_message(text: str) -> List[str]:
-    # length = len(text)
-    # if length < MAX_MESSAGE_LENGTH:
-        # return [text]
+# main transcribing model
+whisper_base_model = whisper.load_model("base")
 
-    # results = []
-    # for i in range(0, length, MAX_MESSAGE_LENGTH):
-        # results.append(text[i:MAX_MESSAGE_LENGTH])
-
-    # return results
+files_to_remove = []
 
 
-# def download_and_prep(file_name: str, message: Message) -> None:
-    # message.voice.get_file().download(file_name)
-    # message.reply_chat_action(action=ChatAction.TYPING)
-
-
-# # TODO: this funciton must be rewritten to work with whisper <17-12-22, modernpacifist> #
-# def transcribe(file_name: str, message: Message, lang_code: str = 'ru-RU', alternatives: List[str] = ['en-US', 'uk-UA']) -> List[str]:
-    # media_info = MediaInfo.parse(file_name)
-    # if len(media_info.audio_tracks) != 1 or not hasattr(media_info.audio_tracks[0], 'sampling_rate'):
-        # os.remove(file_name)
-        # raise ValueError('Failed to detect sample rate')
-    # actual_duration = round(media_info.audio_tracks[0].duration / 1000)
-
-    # sample_rate = media_info.audio_tracks[0].sampling_rate
-    # encoding = RecognitionConfig.AudioEncoding.OGG_OPUS
-    # if sample_rate not in SUPPORTED_SAMPLE_RATES:
-        # message.reply_text('Your voice message has a sample rate of {} Hz which is not in the list '
-                           # 'of supported sample rates ({}).\n\nI will try to resample it, '
-                           # 'but this may reduce recognition accuracy'
-                           # .format(sample_rate,
-                                   # ', '.join(str(int(rate / 1000)) + ' kHz' for rate in SUPPORTED_SAMPLE_RATES)
-                                   # ),
-                           # quote=True)
-        # message.reply_chat_action(action=ChatAction.TYPING)
-        # encoding, file_name, sample_rate = resample(file_name)
-    # config = RecognitionConfig(
-        # encoding=encoding,
-        # sample_rate_hertz=sample_rate,
-        # enable_automatic_punctuation=True,
-        # language_code=lang_code,
-        # alternative_language_codes=alternatives,
-    # )
-
-    # try:
-        # response = upload_to_gs(file_name, config) \
-            # if actual_duration > UPLOAD_LIMIT \
-            # else regular_upload(file_name, config)
-    # except Exception as e:
-        # print(e)
-        # os.remove(file_name)
-        # return ['Failed']
-
-    # with conn.cursor() as cur:
-        # cur.execute("insert into customer(user_id) values (%s) on conflict (user_id) do nothing;",
-                    # (message.chat_id,))
-        # cur.execute("update customer set balance = balance - (%s) where user_id = (%s);",
-                    # (actual_duration, message.chat_id))
-        # cur.execute("insert into stat(user_id, message_timestamp, duration) values (%s, current_timestamp, %s);",
-                    # (message.chat_id, actual_duration))
-        # conn.commit()
-
-    # os.remove(file_name)
-
-    # message_text = ''
-    # for result in response.results:
-        # message_text += result.alternatives[0].transcript + '\n'
-
-    # return split_long_message(message_text)
-
-
-base_model = whisper.load_model("base")
-
-
+# this must work in async
 def cleanup_files():
-    return None
+    try:
+        for filename in files_to_remove:
+            os.remove(filename)
+            files_to_remove.remove(filename)
 
-
-def download_voice(update, context) -> None:
-    new_file = context.bot.get_file(update.message.voice.file_id)
-
-    file_name = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg"
-    new_file.download(file_name)
+    except Exception as e:
+        print(e)
+        return
 
 
 def transcribe_to_text(filename):
     try:
         with open(filename, 'rb') as f:
-            result = base_model.transcribe(f.name, fp16=False, language='ru')
+            # result = whisper_base_model.transcribe(f.name, fp16=False, language='ru')
+            result = whisper_base_model.transcribe(f.name, fp16=False, language='en')
 
     except Exception as e:
         print(e)
         return None
 
-    return result["text"]
+    return result.get("text")
 
 
 def voice_to_text(update, context) -> None:
     message = update.effective_message
-    # if message.voice.duration > MY_NERVES_LIMIT:
-        # message.reply_text(POLITE_RESPONSE, quote=True)
-        # return
-
-    chat_id = update.effective_message.chat.id
-    filename = f"{chat_id}_{update.message.from_user.id}{update.message.message_id}.ogg"
 
     # downloading file
-    new_file = context.bot.get_file(update.message.voice.file_id)
-    # file_name = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg"
-    new_file.download(filename)
-    # download_voice()
+    filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg"
+    voice_file = context.bot.get_file(update.message.voice.file_id)
+    voice_file.download(filename)
 
+    files_to_remove.append(filename)
+
+    # transcribing to text with whisper
     res = transcribe_to_text(filename)
     if res is None:
         message.reply_text("Could not transcribe")
         return
-    
-    message.reply_text(res)
+
+    if len(res) == 0:
+        message.reply_text("Voice message is empty")
+
+    else:
+        message.reply_text(res)
+
+    cleanup_files()
 
 
 def unknown_text(update, context) -> None:
@@ -155,19 +92,17 @@ def _add_handlers(dispatcher) -> None:
 def main():
     try:
         updater = Updater(BOT_TOKEN)
+
     except Exception as e:
-        print(e)
+        print(f"Error during bot initialization: {e}")
         exit(1)
 
-    # _add_handlers line is essenstial for command handling
+    # handling commands/events from users
     _add_handlers(updater.dispatcher)
 
-    # Start the Bot
-    # start_polling() is non-blocking and will stop the bot gracefully.
+    # start the bot
     updater.start_polling()
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
     updater.idle()
 
 
