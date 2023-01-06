@@ -41,7 +41,6 @@ def transcribe_to_text(filename):
     try:
         with open(filename, 'rb') as f:
             result = whisper_base_model.transcribe(f.name, fp16=False, language='ru')
-            # result = whisper_base_model.transcribe(f.name, fp16=False, language='en')
 
     except Exception as e:
         print(e)
