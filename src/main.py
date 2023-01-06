@@ -74,14 +74,10 @@ def voice_to_text(update, context) -> None:
     cleanup_files()
 
 
-def temp_func(update, context) -> None:
-    video_to_text(update, context, "func_start_v2")
-
-
-def video_to_text(update, context, str) -> None:
+def video_to_text(update, context) -> None:
     message = update.effective_message
 
-    message.reply_text(str)
+    message.reply_text("function video to audio translation is started")
 
     # downloading file
     filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.mp4"
@@ -104,10 +100,10 @@ def video_to_text(update, context, str) -> None:
 
     cleanup_files()
 	
-
+	
 def _add_handlers(dispatcher) -> None:
     dispatcher.add_handler(MessageHandler(filters.Filters.voice, voice_to_text))
-    dispatcher.add_handler(MessageHandler(filters.Filters.video_note, temp_func))
+    dispatcher.add_handler(MessageHandler(filters.Filters.video_note, video_to_text))
 	
 
 def main():
