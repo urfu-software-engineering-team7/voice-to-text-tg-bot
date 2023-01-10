@@ -22,20 +22,6 @@ logger = logging.getLogger(__name__)
 # main transcribing model
 whisper_base_model = whisper.load_model("base")
 
-files_to_remove = []
-
-
-# this must work in async
-def cleanup_files():
-    try:
-        for filename in files_to_remove:
-            os.remove(filename)
-            files_to_remove.remove(filename)
-
-    except Exception as e:
-        print(e)
-        return
-
 
 def transcribe_to_text(filename):
     try:
@@ -58,8 +44,6 @@ def voice_to_text(update, context) -> None:
     voice_file = context.bot.get_file(update.message.voice.file_id)
     voice_file.download(filename)
 
-    files_to_remove.append(filename)
-
     # transcribing to text with whisper
     res = transcribe_to_text(filename)
     if res is None:
@@ -72,7 +56,11 @@ def voice_to_text(update, context) -> None:
     else:
         message.reply_text(res)
 
-    cleanup_files()
+    try:
+        os.remove(filename)
+
+    except Exception as e:
+        logger.warning(f"Removing file {filename} caused error:\n{e}")
 
 
 def _add_handlers(dispatcher) -> None:
