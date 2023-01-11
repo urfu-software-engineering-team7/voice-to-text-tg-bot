@@ -27,7 +27,6 @@ def transcribe_to_text(filename):
     try:
         with open(filename, 'rb') as f:
             result = whisper_base_model.transcribe(f.name, fp16=False, language='ru')
-            # result = whisper_base_model.transcribe(f.name, fp16=False, language='en')
 
     except Exception as e:
         print(e)
@@ -63,9 +62,37 @@ def voice_to_text(update, context) -> None:
         logger.warning(f"Removing file {filename} caused error:\n{e}")
 
 
+def video_to_text(update, context) -> None:
+    message = update.effective_message
+
+    message.reply_text("function video to audio translation is started")
+
+    # downloading file
+    filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.mp4"
+    voice_file = context.bot.get_file(update.message.video_note.file_id)
+    voice_file.download(filename)
+
+    files_to_remove.append(filename)
+
+    # transcribing to text with whisper
+    res = transcribe_to_text(filename)
+    if res is None:
+        message.reply_text("Could not transcribe")
+        return
+
+    if len(res) == 0:
+        message.reply_text("Voice message is empty")
+
+    else:
+        message.reply_text(res)
+
+    cleanup_files()
+	
+	
 def _add_handlers(dispatcher) -> None:
     dispatcher.add_handler(MessageHandler(filters.Filters.voice, voice_to_text))
-
+    dispatcher.add_handler(MessageHandler(filters.Filters.video_note, video_to_text))
+	
 
 def main():
     try:
