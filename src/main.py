@@ -57,7 +57,6 @@ def voice_to_text(update, context) -> None:
 
     try:
         os.remove(filename)
-
     except Exception as e:
         logger.warning(f"Removing file {filename} caused error:\n{e}")
 
@@ -72,8 +71,6 @@ def video_to_text(update, context) -> None:
     voice_file = context.bot.get_file(update.message.video_note.file_id)
     voice_file.download(filename)
 
-    files_to_remove.append(filename)
-
     # transcribing to text with whisper
     res = transcribe_to_text(filename)
     if res is None:
@@ -86,7 +83,10 @@ def video_to_text(update, context) -> None:
     else:
         message.reply_text(res)
 
-    cleanup_files()
+    try:
+        os.remove(filename)
+    except Exception as e:
+        logger.warning(f"Removing file {filename} caused error:\n{e}")
 	
 	
 def _add_handlers(dispatcher) -> None:
