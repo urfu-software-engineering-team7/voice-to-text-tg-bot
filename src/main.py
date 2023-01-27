@@ -64,8 +64,6 @@ def voice_to_text(update, context) -> None:
 def video_to_text(update, context) -> None:
     message = update.effective_message
 
-    message.reply_text("function video to audio translation is started")
-
     # downloading file
     filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.mp4"
     voice_file = context.bot.get_file(update.message.video_note.file_id)
