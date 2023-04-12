@@ -4,12 +4,13 @@
 import os
 import logging
 import whisper
-# import threading
-# for local files/buffers parallel cleanup
 
-from threading import Thread
 from dotenv import load_dotenv
-from telegram.ext import Updater, MessageHandler, filters
+from telegram.ext import (
+    Application,
+    MessageHandler,
+    filters,
+)
 
 load_dotenv()
 
@@ -29,31 +30,31 @@ def transcribe_to_text(filename):
             result = whisper_base_model.transcribe(f.name, fp16=False, language='ru')
 
     except Exception as e:
-        print(e)
+        logger.error(e)
         return None
 
     return result.get("text")
 
 
-def voice_to_text(update, context) -> None:
-    message = update.effective_message
-
+async def voice_to_text(update, context) -> None:
     # downloading file
     filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg"
-    voice_file = context.bot.get_file(update.message.voice.file_id)
-    voice_file.download(filename)
+    voice_file = await context.bot.get_file(update.message.voice.file_id)
+    await voice_file.download_to_drive(filename)
+
+    print(filename)
 
     # transcribing to text with whisper
     res = transcribe_to_text(filename)
     if res is None:
-        message.reply_text("Could not transcribe")
+        await update.message.reply_text("Could not transcribe")
         return
 
     if len(res) == 0:
-        message.reply_text("Voice message is empty")
+        await update.message.reply_text("Voice message is empty")
 
     else:
-        message.reply_text(res)
+        await update.message.reply_text(res)
 
     try:
         os.remove(filename)
@@ -61,25 +62,23 @@ def voice_to_text(update, context) -> None:
         logger.warning(f"Removing file {filename} caused error:\n{e}")
 
 
-def video_to_text(update, context) -> None:
-    message = update.effective_message
-
+async def video_to_text(update, context) -> None:
     # downloading file
     filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.mp4"
-    voice_file = context.bot.get_file(update.message.video_note.file_id)
+    voice_file = await context.bot.get_file(update.message.video_note.file_id)
     voice_file.download(filename)
 
     # transcribing to text with whisper
     res = transcribe_to_text(filename)
     if res is None:
-        message.reply_text("Could not transcribe")
+        await update.message.reply_text("Could not transcribe")
         return
 
     if len(res) == 0:
-        message.reply_text("Voice message is empty")
+        await update.message.reply_text("Voice message is empty")
 
     else:
-        message.reply_text(res)
+        await update.message.reply_text(res)
 
     try:
         os.remove(filename)
@@ -87,26 +86,28 @@ def video_to_text(update, context) -> None:
         logger.warning(f"Removing file {filename} caused error:\n{e}")
 	
 	
-def _add_handlers(dispatcher) -> None:
-    dispatcher.add_handler(MessageHandler(filters.Filters.voice, voice_to_text))
-    dispatcher.add_handler(MessageHandler(filters.Filters.video_note, video_to_text))
+# def _add_handlers(dispatcher) -> None:
+#     dispatcher.add_handler(MessageHandler(filters.Filters.voice, voice_to_text))
+#     dispatcher.add_handler(MessageHandler(filters.Filters.video_note, video_to_text))
 	
 
 def main():
     try:
-        updater = Updater(BOT_TOKEN)
+        # updater = Updater(BOT_TOKEN)
+        app = Application.builder().token(BOT_TOKEN).build()
 
     except Exception as e:
         print(f"Error during bot initialization: {e}")
         exit(1)
 
+    app.add_handler(MessageHandler(filters.VOICE, voice_to_text))
+    app.add_handler(MessageHandler(filters.VIDEO_NOTE, video_to_text))
+
     # handling commands/events from users
-    _add_handlers(updater.dispatcher)
+    # _add_handlers(updater.dispatcher)
 
     # start the bot
-    updater.start_polling()
-
-    updater.idle()
+    app.run_polling()
 
 
 if __name__ == "__main__":
