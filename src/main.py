@@ -36,13 +36,15 @@ def transcribe_to_text(filename):
     return result.get("text")
 
 
-async def voice_to_text(update, context) -> None:
-    # downloading file
+async def download_file(update, context) -> str:
     filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg"
     voice_file = await context.bot.get_file(update.message.voice.file_id)
     await voice_file.download_to_drive(filename)
+    return filename
 
-    print(filename)
+
+async def voice_to_text(update, context) -> None:
+    filename = await download_file(update, context)
 
     # transcribing to text with whisper
     res = transcribe_to_text(filename)
@@ -84,16 +86,10 @@ async def video_to_text(update, context) -> None:
         os.remove(filename)
     except Exception as e:
         logger.warning(f"Removing file {filename} caused error:\n{e}")
-	
-	
-# def _add_handlers(dispatcher) -> None:
-#     dispatcher.add_handler(MessageHandler(filters.Filters.voice, voice_to_text))
-#     dispatcher.add_handler(MessageHandler(filters.Filters.video_note, video_to_text))
-	
+
 
 def main():
     try:
-        # updater = Updater(BOT_TOKEN)
         app = Application.builder().token(BOT_TOKEN).build()
 
     except Exception as e:
@@ -102,9 +98,6 @@ def main():
 
     app.add_handler(MessageHandler(filters.VOICE, voice_to_text))
     app.add_handler(MessageHandler(filters.VIDEO_NOTE, video_to_text))
-
-    # handling commands/events from users
-    # _add_handlers(updater.dispatcher)
 
     # start the bot
     app.run_polling()
