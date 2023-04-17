@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from telegram.ext import (
     Application,
     MessageHandler,
+    CommandHandler,
     filters,
 )
 
@@ -34,6 +35,16 @@ def transcribe_to_text(filename):
         return None
 
     return result.get("text")
+
+
+async def help(update, context) -> None:
+    await context.bot.send_message(
+    update.message.chat_id,
+    """
+Hello, I am a telegram bot for translation of voice messages into text via whisper language model.\n
+Any voice messages that I intercept will be translated.
+    """
+    )
 
 
 async def download_file(update, context) -> str:
@@ -96,6 +107,7 @@ def main():
         print(f"Error during bot initialization: {e}")
         exit(1)
 
+    app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.VOICE, voice_to_text))
     app.add_handler(MessageHandler(filters.VIDEO_NOTE, video_to_text))
 
