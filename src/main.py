@@ -66,9 +66,7 @@ async def voice_to_text(update, context) -> None:
 
 async def video_to_text(update, context) -> None:
     # downloading file
-    filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.mp4"
-    voice_file = await context.bot.get_file(update.message.video_note.file_id)
-    voice_file.download(filename)
+    filename = await download_file(update, context)
 
     # transcribing to text with whisper
     res = transcribe_to_text(filename)
