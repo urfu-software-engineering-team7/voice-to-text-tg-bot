@@ -73,6 +73,12 @@ async def video_to_text(update, context) -> None:
         logger.warning(f"Removing file {filename} caused error:\n{e}")
 
 
+async def help(update, context):
+    await update.message.reply_text("""
+            Send me any audio file and I will translate it into text
+            """)
+
+
 def main():
     try:
         app = Application.builder().token(BOT_TOKEN).build()
