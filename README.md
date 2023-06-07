@@ -27,14 +27,17 @@ scoop install ffmpeg
 
 
 **Installation for Linux and macOS:**
+
+on Ubuntu or Debian
 ```  
-# on Ubuntu or Debian
 sudo apt update && sudo apt install ffmpeg
-
-# on Arch Linux
+```
+on Arch Linux
+```
 sudo pacman -S ffmpeg
-
-# on MacOS using Homebrew (https://brew.sh/)
+```
+on MacOS using Homebrew (https://brew.sh/)
+```
 brew install ffmpeg
 ```
 
