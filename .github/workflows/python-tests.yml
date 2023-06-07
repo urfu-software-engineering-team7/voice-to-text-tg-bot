@@ -5,16 +5,14 @@ name: Tests
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+        - "master" 
   pull_request:
-    branches: [ "master" ]
-
-permissions:
-  contents: read
+    branches:
+        - "master" 
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
