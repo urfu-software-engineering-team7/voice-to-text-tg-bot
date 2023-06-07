@@ -3,7 +3,6 @@
 
 import os
 import logging
-import whisper
 import whisper_ops
 
 from dotenv import load_dotenv
@@ -19,26 +18,6 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-
-# main transcribing model
-whisper_base_model = whisper.load_model("base")
-
-
-# def transcribe_to_text(filename):
-    # try:
-        # with open(filename, 'rb') as f:
-            # result = whisper_base_model.transcribe(f.name, fp16=False, language='ru')
-
-    # except Exception as e:
-        # logger.error(e)
-        # return None
-
-    # text = result.get("text")
-    # if text is not None:
-        # return text
-
-    # return None
 
 
 async def download_file(update, context) -> str:
