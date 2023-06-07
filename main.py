@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from telegram.ext import (
     Application,
     MessageHandler,
+    CommandHandler,
     filters,
 )
 
@@ -80,6 +81,7 @@ def main():
         print(f"Error during bot initialization: {e}")
         exit(1)
 
+    app.add_handler(CommandHandler("help", help))
     app.add_handler(MessageHandler(filters.VOICE, voice_to_text))
     app.add_handler(MessageHandler(filters.VIDEO_NOTE, video_to_text))
 
