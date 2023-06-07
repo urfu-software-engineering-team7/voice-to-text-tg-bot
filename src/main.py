@@ -33,7 +33,11 @@ def transcribe_to_text(filename):
         logger.error(e)
         return None
 
-    return result.get("text")
+    text = result.get("text")
+    if text is not None:
+        return text
+
+    return None
 
 
 async def download_file(update, context) -> str:
