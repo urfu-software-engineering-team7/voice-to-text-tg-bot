@@ -1,4 +1,5 @@
-from main import transcribe_to_text
+# from  import *
+from whisper_ops import transcribe_to_text
 
 
 class TestTranscribeToText:

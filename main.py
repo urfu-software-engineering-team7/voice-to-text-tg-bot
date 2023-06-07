@@ -4,6 +4,7 @@
 import os
 import logging
 import whisper
+import whisper_ops
 
 from dotenv import load_dotenv
 from telegram.ext import (
@@ -24,20 +25,20 @@ logger = logging.getLogger(__name__)
 whisper_base_model = whisper.load_model("base")
 
 
-def transcribe_to_text(filename):
-    try:
-        with open(filename, 'rb') as f:
-            result = whisper_base_model.transcribe(f.name, fp16=False, language='ru')
+# def transcribe_to_text(filename):
+    # try:
+        # with open(filename, 'rb') as f:
+            # result = whisper_base_model.transcribe(f.name, fp16=False, language='ru')
 
-    except Exception as e:
-        logger.error(e)
-        return None
+    # except Exception as e:
+        # logger.error(e)
+        # return None
 
-    text = result.get("text")
-    if text is not None:
-        return text
+    # text = result.get("text")
+    # if text is not None:
+        # return text
 
-    return None
+    # return None
 
 
 async def download_file(update, context) -> str:
@@ -51,7 +52,7 @@ async def voice_to_text(update, context) -> None:
     filename = await download_file(update, context)
 
     # transcribing to text with whisper
-    res = transcribe_to_text(filename)
+    res = whisper_ops.transcribe_to_text(filename)
     if res is None:
         await update.message.reply_text("Could not transcribe")
         return
@@ -75,7 +76,7 @@ async def video_to_text(update, context) -> None:
     voice_file.download(filename)
 
     # transcribing to text with whisper
-    res = transcribe_to_text(filename)
+    res = whisper_ops.transcribe_to_text(filename)
     if res is None:
         await update.message.reply_text("Could not transcribe")
         return
