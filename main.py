@@ -13,12 +13,15 @@ from telegram.ext import (
     filters,
 )
 
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+if BOT_TOKEN is None:
+    logger.critical("Bot token is not found in .env file")
+    exit(1)
 
 
 async def download_file(update, context) -> str:
@@ -51,9 +54,7 @@ async def voice_to_text(update, context) -> None:
 
 async def video_to_text(update, context) -> None:
     # downloading file
-    filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.mp4"
-    voice_file = await context.bot.get_file(update.message.video_note.file_id)
-    voice_file.download(filename)
+    filename = await download_file(update, context)
 
     # transcribing to text with whisper
     res = whisper_ops.transcribe_to_text(filename)
