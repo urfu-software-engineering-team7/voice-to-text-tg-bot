@@ -24,15 +24,20 @@ if BOT_TOKEN is None:
     exit(1)
 
 
-async def download_file(update, context) -> str:
+async def download_speech(update, context, video_note=False) -> str:
     filename = f"{update.effective_message.chat.id}_{update.message.from_user.id}{update.message.message_id}.ogg"
-    voice_file = await context.bot.get_file(update.message.voice.file_id)
+
+    if video_note is True:
+        voice_file = await context.bot.get_file(update.message.video_note.file_id)
+    else:
+        voice_file = await context.bot.get_file(update.message.voice.file_id)
+
     await voice_file.download_to_drive(filename)
     return filename
 
 
 async def voice_to_text(update, context) -> None:
-    filename = await download_file(update, context)
+    filename = await download_speech(update, context)
 
     # transcribing to text with whisper
     res = whisper_ops.transcribe_to_text(filename)
@@ -54,7 +59,7 @@ async def voice_to_text(update, context) -> None:
 
 async def video_to_text(update, context) -> None:
     # downloading file
-    filename = await download_file(update, context)
+    filename = await download_speech(update, context, video_note=True)
 
     # transcribing to text with whisper
     res = whisper_ops.transcribe_to_text(filename)
