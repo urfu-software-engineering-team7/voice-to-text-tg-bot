@@ -12,6 +12,20 @@ BOT_TOKEN="<token_from_tg>"
 $ python3.9 main.py
 ```
 
+### Usage via poetry (recommended)
+1. Install dependencies
+```
+$ poetry install
+```
+2. Run
+```
+$ poetry run python3.9 main.py
+```
+3. Run tests
+```
+$ poetry run pytest
+```
+
 ### FFmpeg Installation ###  
 **Installation for Windows:**  
 For Windows, you can install it via the [download](https://ffmpeg.org/download.html#build-windows) link, then add it to the PATH.  
