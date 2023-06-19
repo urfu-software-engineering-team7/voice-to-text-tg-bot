@@ -17,4 +17,3 @@ class TestTranscribeToText:
     def test_broken_mp3(self):
         res = transcribe_to_text('./mp3_samples/Broken.mp3')
         assert res == "Audio could not be transcribed"
-
