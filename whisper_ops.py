@@ -18,8 +18,7 @@ def transcribe_to_text(filename):
         return "Audio could not be transcribed"
 
     text = result.get("text")
-    if text is not None:
-        return text
+    if text is None:
+        return "Audio is empty"
 
-    return "Audio is empty"
-
+    return text
