@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-base_model = whisper.load_model("medium")
+base_model = whisper.load_model("base")
 
 
 def transcribe_to_text(filename):
